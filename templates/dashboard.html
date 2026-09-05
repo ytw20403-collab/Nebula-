@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nebula Dashboard</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    min-height:100vh;
+    font-family:Arial,sans-serif;
+    color:white;
+    background:
+        radial-gradient(circle at 15% 20%,#321b72 0%,transparent 30%),
+        radial-gradient(circle at 85% 80%,#5b145f 0%,transparent 30%),
+        linear-gradient(135deg,#02000b,#08001c,#020008);
+    padding:25px;
+}
+
+.stars{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    background-image:
+        radial-gradient(white 1px,transparent 1px),
+        radial-gradient(#aaa 1px,transparent 1px);
+    background-size:70px 70px,120px 120px;
+    background-position:0 0,40px 60px;
+    opacity:.55;
+    animation:move 35s linear infinite;
+}
+
+@keyframes move{
+    from{transform:translateY(0)}
+    to{transform:translateY(70px)}
+}
+
+.container{
+    position:relative;
+    z-index:2;
+    max-width:900px;
+    margin:auto;
+}
+
+.header{
+    text-align:center;
+    padding:30px 10px;
+}
+
+.logo{
+    font-size:48px;
+    margin-bottom:10px;
+}
+
+h1{
+    font-size:clamp(32px,7vw,55px);
+    letter-spacing:3px;
+    background:linear-gradient(90deg,#fff,#c3aaff,#8cddff);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+.subtitle{
+    color:#aaa4c0;
+    margin-top:10px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.stat{
+    padding:22px;
+    border-radius:20px;
+    text-align:center;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(12px);
+}
+
+.stat-number{
+    font-size:32px;
+    font-weight:bold;
+}
+
+.stat-label{
+    color:#aaa4c0;
+    margin-top:6px;
+    font-size:14px;
+}
+
+.card{
+    padding:24px;
+    margin-bottom:18px;
+    border-radius:22px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(12px);
+    box-shadow:0 15px 50px rgba(0,0,0,.2);
+}
+
+.card-title{
+    font-size:20px;
+    margin-bottom:18px;
+}
+
+.location-row{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    padding:14px 0;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.label{
+    color:#aaa4c0;
+}
+
+.value{
+    text-align:right;
+    word-break:break-word;
+}
+
+.empty{
+    text-align:center;
+    padding:55px 20px;
+    color:#aaa4c0;
+}
+
+.empty-icon{
+    font-size:55px;
+    margin-bottom:15px;
+}
+
+.badge{
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:20px;
+    background:rgba(115,75,255,.2);
+    color:#cbbcff;
+    font-size:12px;
+    margin-bottom:15px;
+}
+
+.refresh{
+    text-align:center;
+    color:#77718d;
+    font-size:12px;
+    margin-top:20px;
+}
+
+@media(max-width:600px){
+    .stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .location-row{
+        flex-direction:column;
+        gap:5px;
+    }
+
+    .value{
+        text-align:left;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="stars"></div>
+
+<div class="container">
+
+    <div class="header">
+        <div class="logo">🌌</div>
+        <h1>NEBULA</h1>
+        <p class="subtitle">Location Activity Dashboard</p>
+    </div>
+
+    <div class="stats">
+
+        <div class="stat">
+            <div class="stat-number" id="total">0</div>
+            <div class="stat-label">Total Locations</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-number">✨</div>
+            <div class="stat-label">Sky Status</div>
+        </div>
+
+    </div>
+
+    <div id="locations"></div>
+
+    <div class="refresh">
+        Dashboard automatically refreshes every 5 seconds
+    </div>
+
+</div>
+
+<script>
+
+async function loadLocations(){
+
+    const box = document.getElementById("locations");
+    const total = document.getElementById("total");
+
+    try{
+
+        const response = await fetch("/api/locations");
+        const locations = await response.json();
+
+        total.innerText = locations.length;
+
+        if(locations.length === 0){
+
+            box.innerHTML = `
+                <div class="card empty">
+                    <div class="empty-icon">🌙</div>
+                    <div>No location received yet.</div>
+                    <p style="margin-top:8px">
+                        When someone gives location permission,
+                        the location will appear here.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        box.innerHTML = locations.slice().reverse().map((item,index) => `
+
+            <div class="card">
+
+                <span class="badge">
+                    📍 Location #${locations.length - index}
+                </span>
+
+                <div class="location-row">
+                    <span class="label">Latitude</span>
+                    <span class="value">${item.latitude}</span>
+                </div>
+
+                <div class="location-row">
+                    <span class="label">Longitude</span>
+                    <span class="value">${item.longitude}</span>
+                </div>
+
+                <div class="location-row">
+                    <span class="label">Date & Time</span>
+                    <span class="value">${item.time}</span>
+                </div>
+
+            </div>
+
+        `).join("");
+
+    }catch(error){
+
+        box.innerHTML = `
+            <div class="card empty">
+                ⚠️ Dashboard server-এর সাথে connection পাওয়া যাচ্ছে না।
+            </div>
+        `;
+    }
+}
+
+loadLocations();
+
+setInterval(loadLocations,5000);
+
+</script>
+
+</body>
+</html>

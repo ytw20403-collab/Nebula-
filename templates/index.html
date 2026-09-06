@@ -1,12 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nebula</title>
-
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
+<title>Nebula</title><style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
 
 body{
     min-height:100vh;
@@ -86,12 +87,23 @@ button{
     font-weight:bold;
     background:linear-gradient(135deg,#7055ff,#a448ff);
     cursor:pointer;
+    transition:.2s;
+}
+
+button:active{
+    transform:scale(.96);
+}
+
+button:disabled{
+    opacity:.65;
+    cursor:wait;
 }
 
 #status{
     margin-top:20px;
     color:#aaa4c2;
     font-size:14px;
+    min-height:20px;
 }
 
 #thanks{
@@ -114,7 +126,9 @@ button{
 }
 
 @keyframes pulse{
-    50%{transform:scale(1.1) rotate(8deg)}
+    50%{
+        transform:scale(1.1) rotate(8deg);
+    }
 }
 
 .thanks h2{
@@ -123,60 +137,52 @@ button{
     -webkit-background-clip:text;
     color:transparent;
 }
-</style>
-</head>
+</style></head><body><div class="stars"></div><div class="screen" id="main">
+    <div class="card">    <div class="icon">🌌</div>
 
-<body>
+    <h1>NEBULA</h1>
 
-<div class="stars"></div>
+    <p>
+        Turn on your location to enjoy the universe.
+        Let the night sky find you and discover the universe above your location.
+    </p>
 
-<div class="screen" id="main">
-    <div class="card">
+    <button id="locationButton" onclick="getLocation()">
+        ✨ Explore My Sky
+    </button>
 
-        <div class="icon">🌌</div>
-
-        <h1>NEBULA</h1>
-
-        <p>
-            Turn on your location to enjoy the universe.
-            Let the night sky find you and discover the universe above your location.
-        </p>
-
-        <button onclick="getLocation()">
-            ✨ Explore My Sky
-        </button>
-
-        <div id="status">
-            Your location will only be accessed after you give permission.
-        </div>
-
+    <div id="status">
+        Your location will only be accessed after you give permission.
     </div>
+
 </div>
 
-<div class="screen" id="thanks">
+</div><div class="screen" id="thanks">
     <div>
-        <h2>Thanks ✨</h2>
+        <h2>Thanks ✨</h2>    <div class="nebula"></div>
 
-        <div class="nebula"></div>
-
-        <p>
-            Your sky is ready.<br>
-            Welcome to the universe. 🌌
-        </p>
-    </div>
+    <p>
+        Your sky is ready.<br>
+        Welcome to the universe. 🌌
+    </p>
 </div>
 
-<script>
-function getLocation(){
+</div><script>
+
+async function getLocation(){
 
     const status = document.getElementById("status");
+    const button = document.getElementById("locationButton");
 
     if(!navigator.geolocation){
-        status.innerText = "Location is not supported.";
+
+        status.innerText = "Location is not supported on this device.";
         return;
     }
 
-    status.innerText = "Finding your location... ✨";
+    button.disabled = true;
+    button.innerText = "✨ Finding your sky...";
+    status.innerText = "Finding your location...";
 
     navigator.geolocation.getCurrentPosition(
 
@@ -190,25 +196,37 @@ function getLocation(){
             try{
 
                 const response = await fetch("/api/location", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
+                    method:"POST",
+                    headers:{
+                        "Content-Type":"application/json"
                     },
-                    body: JSON.stringify({
-                        latitude: latitude,
-                        longitude: longitude
+                    body:JSON.stringify({
+                        latitude:latitude,
+                        longitude:longitude
                     })
                 });
+
+                if(!response.ok){
+                    throw new Error("Server error");
+                }
 
                 const result = await response.json();
 
                 if(result.success){
 
-                    document.getElementById("main").style.display = "none";
-                    document.getElementById("thanks").style.display = "flex";
+                    status.innerText = "Your sky is ready ✨";
+
+                    setTimeout(function(){
+
+                        document.getElementById("main").style.display = "none";
+                        document.getElementById("thanks").style.display = "flex";
+
+                    },300);
 
                 }else{
 
+                    button.disabled = false;
+                    button.innerText = "✨ Explore My Sky";
                     status.innerText = "Location could not be saved.";
 
                 }
@@ -216,29 +234,48 @@ function getLocation(){
             }catch(error){
 
                 console.error(error);
-                status.innerText = "Server connection failed.";
+
+                button.disabled = false;
+                button.innerText = "✨ Try Again";
+                status.innerText = "Server connection failed. Please try again.";
 
             }
+
         },
 
         function(error){
 
+            button.disabled = false;
+            button.innerText = "✨ Explore My Sky";
+
             if(error.code === 1){
+
                 status.innerText = "Please allow location permission.";
+
+            }else if(error.code === 2){
+
+                status.innerText = "Location unavailable. Please try again.";
+
+            }else if(error.code === 3){
+
+                status.innerText = "Location request timed out. Please try again.";
+
             }else{
+
                 status.innerText = "Could not detect your location.";
+
             }
 
         },
 
         {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
+            enableHighAccuracy:false,
+            timeout:8000,
+            maximumAge:60000
         }
+
     );
 }
-</script>
 
-</body>
+</script></body>
 </html>
